@@ -43,7 +43,15 @@ class YoloV3:
                     y = int(center_y - h / 2)
                     boxes.append([x, y, w, h])
                     confidences.append(float(confidence))
-                    class_names.append(self.classes[class_names])
-        indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.4, 0.3)
+                    class_names.append(self.classes[class_id])
 
-        return boxes, confidences, class_names, indexes
+        # Filter out only the detections coming from Non-maximum suppression
+        indexes = list(cv2.dnn.NMSBoxes(boxes, confidences, 0.4, 0.3))
+        boxes = self.__filter_by_indexes(boxes, indexes)
+        confidences = self.__filter_by_indexes(confidences, indexes)
+        class_names = self.__filter_by_indexes(class_names, indexes)
+
+        return boxes, confidences, class_names
+
+    def __filter_by_indexes(self, array, indexes):
+        return [array[index] for index in indexes]

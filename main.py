@@ -12,8 +12,7 @@ class WildlifeCameraTrapApp(MDApp):
     # Run continuously to get webcam feed
     def update(self, *args):
         _, frame = self.capture.read()
-        self.frame_id += 1
-        boxes, confidences, class_names, indexes = self.yolo_v3.detect_objects(frame)
+        boxes, confidences, class_names = self.yolo_v3.detect_objects(frame)
 
         # Flip horizontal and convert image to texture
         buf = cv2.flip(frame, 0).tobytes()

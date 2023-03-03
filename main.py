@@ -1,11 +1,13 @@
 import cv2
 from kivy.core.window import Window
 from kivymd.uix.screen import MDScreen
+from app.ml.yolo_v3 import YoloV3
 import kivy
 kivy.require('1.0.6') 
 from kivymd.app import MDApp
 class WildlifeCameraTrapApp(MDApp):
     def build(self):
+        self._load_model()
         return self._create_layout()
     # Run continuously to get webcam feed
     def update(self, *args):
@@ -29,5 +31,8 @@ class WildlifeCameraTrapApp(MDApp):
         base_scren.add_widget(self.web_cam)
         return base_scren
 
+
+    def _load_model(self):
+        self.yolo_v3 = YoloV3()
 if __name__ == '__main__':
     WildlifeCameraTrapApp().run()

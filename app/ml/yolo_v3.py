@@ -15,7 +15,8 @@ class YoloV3:
             self.classes = [line.strip() for line in f.readlines()]
         layer_names = self.model.getLayerNames()
         self.output_layers = [layer_names[i - 1] for i in self.model.getUnconnectedOutLayers()]
-        self.selected_classes = Constants.COCO_CLASSES_TO_USE.keys()
+        self.selected_classes = Constants.COCO_CLASSES_TO_USE
+        assert set(self.selected_classes).issubset(set(self.classes))
 
     def detect_objects(self, frame):
         height, width, channels = frame.shape

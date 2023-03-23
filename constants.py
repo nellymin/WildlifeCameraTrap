@@ -1,7 +1,14 @@
 class Constants:
+    START_RECORDING = 'record'
+    STOP_RECORDING = 'stop'
+    OBJECT_DETECTED = 'record-rec'
+    OBJECT_RECORDING = 'Recording detected object(s)...'
+    NO_OBJECT_DETECTED = 'No object(s) detected'
+    NOT_RECORDING = ''
+    IDLE_SECONDS = 3
     # The confidence at which to return predictions
     CONFIDENCE_THRESHOLD = 0.2
-    COCO_CLASSES_TO_USE = {
+    CLASS_COLORS_TO_USE = {
         # Mapped to the BGR color that will be used for that Class
         'person': (128, 128, 128),
         'bird': (133, 21, 199),
@@ -15,3 +22,4 @@ class Constants:
         'zebra': (128, 128, 0),
         'giraffe': (0, 165, 255)
     }
+    COCO_CLASSES_TO_USE = CLASS_COLORS_TO_USE.keys()

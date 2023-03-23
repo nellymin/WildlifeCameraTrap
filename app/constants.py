@@ -8,6 +8,7 @@ class Constants:
     IDLE_SECONDS = 3
     # The confidence at which to return predictions
     CONFIDENCE_THRESHOLD = 0.2
+    MIN_FPS = 20
     CLASS_COLORS_TO_USE = {
         # Mapped to the BGR color that will be used for that Class
         'person': (128, 128, 128),

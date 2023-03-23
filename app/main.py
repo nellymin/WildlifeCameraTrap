@@ -1,33 +1,34 @@
 import cv2
-import os
-
-from kivy.graphics import RoundedRectangle
-from kivy.uix.relativelayout import RelativeLayout
-from kivy.uix.scatterlayout import ScatterLayout
-from kivymd.theming import Animation
-from kivy.core.window import Window
-from kivymd.uix.screen import MDScreen
-from app.ml.yolo_v3 import YoloV3
 from datetime import datetime
+from app.ml.yolo_v3 import YoloV3
 
 import kivy
-kivy.require('1.0.6') 
+
+kivy.require('1.0.6')
+from kivy.core.window import Window
 from kivymd.app import MDApp
 from kivy.clock import Clock
+from kivymd.uix.screen import MDScreen
 from kivymd.uix.button.button import MDIconButton
-from kivymd.uix.label.label import MDIcon, MDLabel
+from kivymd.uix.label.label import MDLabel
 from kivy.uix.image import Image
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.graphics.texture import Texture
 from constants import Constants
 
+
 class WildlifeCameraTrapApp(MDApp):
+    boxes = []
+    class_names = []
+    confidences = []
+    should_detect = False
+    recording = False
+    last_object_detected_time = None
+
     def build(self):
-        self.boxes = []
-        self.class_names = []
-        self.confidences = []
         self._load_model()
         return self._create_layout()
+
     # Run continuously to get webcam feed
     def update(self, *args):
         _, frame = self.capture.read()
@@ -69,7 +70,7 @@ class WildlifeCameraTrapApp(MDApp):
                             (x, y + 30),
                             self.font,
                             2,
-                            self._get_gbr('white'),
+                            (255, 255, 255, 0),
                             2,
                             lineType=cv2.LINE_AA)
             opacity = max(1 - (self._seconds_since_last_detection() / Constants.IDLE_SECONDS), 0)
@@ -84,8 +85,6 @@ class WildlifeCameraTrapApp(MDApp):
         img_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
         img_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
         self.web_cam.texture = img_texture
-
-
 
     # Recording function to capture objects if present
     def start_stop_recording(self, *args):
@@ -105,7 +104,7 @@ class WildlifeCameraTrapApp(MDApp):
         self.starting_time = datetime.now()
         self.frame_id = 0
         self.last_object_detected_time = datetime.now()
-        Clock.schedule_interval(self.update, 1.0/Constants.MAX_FPS)
+        Clock.schedule_interval(self.update, timeout=(1.0/Constants.MIN_FPS))
 
         # Main layout components 
         self.should_detect = False
@@ -113,40 +112,37 @@ class WildlifeCameraTrapApp(MDApp):
         self.web_cam = Image(
             size=Window.size,
             size_hint=(1, 1)
-            )
+        )
         self.start_stop_recording_button = MDIconButton(
             icon=Constants.START_RECORDING,
             icon_color=(1, 0, 0, 1),
             md_bg_color=(1, 1, 1, 1),
             icon_size='40sp',
-            # text=Constants.START_RECORDING, 
             on_press=self.start_stop_recording
-            # size_hint=(.05,.05)
-            )
+        )
         self.recording_status_label = MDLabel(
             text=Constants.NOT_RECORDING,
-            size_hint=(1,.1),
+            size_hint=(1, .1),
             halign="center",
             font_style="H5"
-            )
+        )
 
-
-        base_scren = MDScreen()
-        base_scren.add_widget(self.web_cam)
-        top_center = AnchorLayout(anchor_x='center', anchor_y='top', padding=[10,10,10,10])
+        base_screen = MDScreen()
+        base_screen.add_widget(self.web_cam)
+        top_center = AnchorLayout(anchor_x='center', anchor_y='top', padding=[10, 10, 10, 10])
         top_center.add_widget(self.recording_status_label)
-        base_scren.add_widget(top_center)
-        side_layout = AnchorLayout(anchor_x='right', anchor_y='center', padding=[10,10,10,10])
+        base_screen.add_widget(top_center)
+        side_layout = AnchorLayout(anchor_x='right', anchor_y='center', padding=[10, 10, 10, 10])
         side_layout.add_widget(self.start_stop_recording_button)
-        base_scren.add_widget(side_layout)
-        return base_scren
-
+        base_screen.add_widget(side_layout)
+        return base_screen
 
     def _load_model(self):
         self.yolo_v3 = YoloV3()
 
     def _seconds_since_last_detection(self):
         return (datetime.now() - self.last_object_detected_time).total_seconds()
+
 
 if __name__ == '__main__':
     WildlifeCameraTrapApp().run()

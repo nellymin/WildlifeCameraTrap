@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from constants import Constants
+from app.constants import Constants
 
 class YoloV3:
 

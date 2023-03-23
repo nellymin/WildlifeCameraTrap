@@ -24,3 +24,4 @@ class Constants:
         'giraffe': (0, 165, 255)
     }
     COCO_CLASSES_TO_USE = CLASS_COLORS_TO_USE.keys()
+    FILENAME_DATEFORMAT = '%Y%m%d-%H%M%S'

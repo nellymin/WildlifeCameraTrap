@@ -23,7 +23,10 @@ class WildlifeCameraTrapApp(MDApp):
     confidences = []
     should_detect = False
     recording = False
+    original_recorder = None
+    marked_recorder = None
     last_object_detected_time = None
+    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
 
     def build(self):
         self._load_model()
@@ -32,24 +35,40 @@ class WildlifeCameraTrapApp(MDApp):
     # Run continuously to get webcam feed
     def update(self, *args):
         _, frame = self.capture.read()
+        elapsed_time = (datetime.now() - self.starting_time).total_seconds()
+        current_fps = self.frame_id / elapsed_time
+        original_frame = frame.copy()
         self.frame_id += 1
         if self.should_detect:
             boxes, confidences, class_names = self.yolo_v3.detect_objects(frame)
             # when objects are detected
             if len(boxes):
-                self.recording = True
+                if not self.recording:
+                    self.recording = True
+                    self.original_recorder = cv2.VideoWriter(
+                        f'{self.last_object_detected_time.strftime(Constants.FILENAME_DATEFORMAT)}_original.mp4',
+                        self.fourcc,
+                        current_fps,
+                        (original_frame.shape[1],
+                         original_frame.shape[0]),
+                    1)
+                    self.marked_recorder = cv2.VideoWriter(
+                        f'{self.last_object_detected_time.strftime(Constants.FILENAME_DATEFORMAT)}_marked.mp4',
+                        self.fourcc,
+                        current_fps,
+                        (frame.shape[1],
+                         frame.shape[0]),
+                    1)
                 self.boxes = boxes
                 self.confidences = confidences
                 self.class_names = class_names
                 self.last_object_detected_time = datetime.now()
-                # self.last_boxes_detected = boxes
-                # self.last_confidences_detected = confidences
                 self.recording_status_label.text = Constants.OBJECT_RECORDING
                 print('detecting objects')
             # Only check if still recording
             elif self.recording:
                 if self._seconds_since_last_detection() > Constants.IDLE_SECONDS:
-                    self.recording = False
+                    self._stop_recording()
                     self.recording_status_label.text = Constants.NO_OBJECT_DETECTED
                     print('not detecting objects, going idle')
                     # Clean up old detections
@@ -59,7 +78,6 @@ class WildlifeCameraTrapApp(MDApp):
                 else:
                     print('not detecting objects')
 
-            frame_copy = frame.copy()
             for box, confidence, class_name in zip(self.boxes, self.confidences, self.class_names):
                 x, y, w, h = box
                 color = Constants.CLASS_COLORS_TO_USE[class_name]
@@ -73,13 +91,16 @@ class WildlifeCameraTrapApp(MDApp):
                             (255, 255, 255, 0),
                             2,
                             lineType=cv2.LINE_AA)
+
             opacity = max(1 - (self._seconds_since_last_detection() / Constants.IDLE_SECONDS), 0)
             # We show the bounding boxes with different opacity to indicate the time since last detection
             # Most opaque => most recent detection
-            frame = cv2.addWeighted(frame, opacity, frame_copy, 1 - opacity, gamma=0)
+            frame = cv2.addWeighted(frame, opacity, original_frame, 1 - opacity, gamma=0)
 
-        elapsed_time = (datetime.now() - self.starting_time).total_seconds()
-
+        if self.recording:
+            self.marked_recorder.write(frame)
+            print('add frame')
+            self.original_recorder.write(original_frame)
         # Flip horizontal and convert image to texture
         buf = cv2.flip(frame, 0).tobytes()
         img_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
@@ -94,6 +115,8 @@ class WildlifeCameraTrapApp(MDApp):
             self.recording_status_label.text = Constants.NO_OBJECT_DETECTED
         elif self.start_stop_recording_button.icon == Constants.STOP_RECORDING:
             self.should_detect = False
+            if self.recording:
+                self._stop_recording()
             self.start_stop_recording_button.icon = Constants.START_RECORDING
             self.recording_status_label.text = Constants.NOT_RECORDING
 
@@ -142,6 +165,13 @@ class WildlifeCameraTrapApp(MDApp):
 
     def _seconds_since_last_detection(self):
         return (datetime.now() - self.last_object_detected_time).total_seconds()
+
+    def _stop_recording(self):
+        self.recording = False
+        self.original_recorder.release()
+        self.original_recorder = None
+        self.marked_recorder.release()
+        self.marked_recorder = None
 
 
 if __name__ == '__main__':

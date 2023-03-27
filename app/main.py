@@ -46,14 +46,14 @@ class WildlifeCameraTrapApp(MDApp):
                 if not self.recording:
                     self.recording = True
                     self.original_recorder = cv2.VideoWriter(
-                        f'{self.last_object_detected_time.strftime(Constants.FILENAME_DATEFORMAT)}_original.mp4',
+                        f'./app/data/{self.last_object_detected_time.strftime(Constants.FILENAME_DATEFORMAT)}_original.mp4',
                         self.fourcc,
                         current_fps,
                         (original_frame.shape[1],
                          original_frame.shape[0]),
                     1)
                     self.marked_recorder = cv2.VideoWriter(
-                        f'{self.last_object_detected_time.strftime(Constants.FILENAME_DATEFORMAT)}_marked.mp4',
+                        f'./app/data/{self.last_object_detected_time.strftime(Constants.FILENAME_DATEFORMAT)}_marked.mp4',
                         self.fourcc,
                         current_fps,
                         (frame.shape[1],
